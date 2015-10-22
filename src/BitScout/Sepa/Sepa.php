@@ -5,13 +5,17 @@ namespace BitScout\Sepa;
 require_once 'Statement.php';
 
 class Sepa {
+	
 	const DEBIT = 'DBIT';
 	
 	/**
+	 * Expects a ZIP or XML file containing a SEPA C52 bank statement
 	 * 
 	 * @param string $filepath Path to a C52 XML file or a ZIP file containing such files     	
 	 */
 	public static function readStatement($filepath) {
+		$filepath = realpath($filepath);
+		
 		$statement = new Statement ();
 		
 		$zip = new \ZipArchive ();
@@ -27,7 +31,7 @@ class Sepa {
 				}
 				
 				// Read file content from within the ZIP file and interprete it as XML
-				$zipDeepPath = 'zip://C:\\Users\\Christian\\Christian\\Projekte\\sepa\\dev\\' . $filepath . '#' . $filename;
+				$zipDeepPath = 'zip://' . $filepath . '#' . $filename;
 				$xml = simplexml_load_string ( Sepa::readFile ( $zipDeepPath ) );
 				
 				Sepa::readC52 ( $xml, $statement, $filename);
@@ -82,6 +86,18 @@ class Sepa {
 					
 					if ($xmlStatement->CdtDbtInd == Sepa::DEBIT) {
 						$transaction->amount = - 1 * $transaction->amount;
+						
+						$transaction->name = $xmlStatement->NtryDtls->TxDtls->RltdPties->Cdtr->Nm;
+						$transaction->iban = $xmlStatement->NtryDtls->TxDtls->RltdPties->CdtrAcct->Id->IBAN;
+						$transaction->bank_name = $xmlStatement->NtryDtls->TxDtls->RltdAgts->CdtrAgt->FinInstnId->Nm;
+						$transaction->bank_code = $xmlStatement->NtryDtls->TxDtls->RltdAgts->CdtrAgt->FinInstnId->Othr->Id;
+						$transaction->bic = $xmlStatement->NtryDtls->TxDtls->RltdAgts->CdtrAgt->FinInstnId->BIC;
+					} else {
+						$transaction->name = $xmlStatement->NtryDtls->TxDtls->RltdPties->Dbtr->Nm;
+						$transaction->iban = $xmlStatement->NtryDtls->TxDtls->RltdPties->DbtrAcct->Id->IBAN;
+						$transaction->bank_name = $xmlStatement->NtryDtls->TxDtls->RltdAgts->DbtrAgt->FinInstnId->Nm;
+						$transaction->bank_code = $xmlStatement->NtryDtls->TxDtls->RltdAgts->DbtrAgt->FinInstnId->Othr->Id;
+						$transaction->bic = $xmlStatement->NtryDtls->TxDtls->RltdAgts->DbtrAgt->FinInstnId->BIC;
 					}
 					
 					array_push ( $statement->transactions, $transaction );
@@ -100,6 +116,11 @@ class Sepa {
 		}
 	}
 	
+	/**
+	 * Reads a text file and returns it as a string
+	 * 
+	 * @param string $path
+	 */
 	private function readFile($path) {
 		$handle = fopen ($path, 'r' );
 		$content = '';
