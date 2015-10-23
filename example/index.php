@@ -9,7 +9,7 @@ use BitScout\Sepa\Sepa;
 
 require_once '../src/BitScout/Sepa/Sepa.php';
 
-$statement = Sepa::readStatement('20150220-20150521-123456-camt52Booked.ZIP');
+$statement = Sepa::readStatement('20150723-20151021-123456-camt52Booked.ZIP');
 
 ?>
 <table border="1" cellspacing="0" cellpadding="5">
@@ -21,15 +21,18 @@ $statement = Sepa::readStatement('20150220-20150521-123456-camt52Booked.ZIP');
 <h2>Transactions</h2>
 <table border="1" cellspacing="0" cellpadding="5">
 	<tr>
-		<th>Date</th>
+		<th>Date & ID</th>
 		<th>Amount</th>
 		<th>Opposing Party &amp; Bank</th>
 		<th>Bank Account</th>
-		<th>Text</th>
+		<th>Text & Transaction type</th>
 	</tr>
 <?php foreach($statement->transactions as $transaction) { ?>
 	<tr>
-		<td><?php echo $transaction->date; ?></td>
+		<td>
+			<?php echo $transaction->date; ?><br>
+			<?php echo $transaction->identifier; ?>
+		</td>
 		<td align="right"><?php echo number_format($transaction->amount, 2); ?></td>
 		<td>
 			<?php echo $transaction->name; ?><br>
@@ -39,7 +42,10 @@ $statement = Sepa::readStatement('20150220-20150521-123456-camt52Booked.ZIP');
 			<?php echo $transaction->bic; ?> <?php echo $transaction->bank_code; ?><br>
 			<?php echo $transaction->iban; ?> <?php echo $transaction->account; ?>
 		</td>
-		<td><?php echo $transaction->text; ?><br><b><?php echo $transaction->filename; ?></b></td>
+		<td>
+			<?php echo $transaction->text; ?><br>
+			<?php echo $transaction->additional_info; ?> (<b><?php echo $transaction->filename; ?></b>)<br>
+		</td>
 	</tr>
 <?php } ?>
 </table>

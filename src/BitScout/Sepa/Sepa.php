@@ -57,7 +57,7 @@ class Sepa {
 		$xmlNamespace = $xml->getDocNamespaces () [''];
 		
 		if (strpos ( $xmlNamespace, 'camt.052' ) !== false) {
-			Sepa::readC52 ( $xml, $statement );
+			Sepa::readC52 ( $xml, $statement, $filename);
 		} else {
 			return null;
 		}
@@ -102,6 +102,8 @@ class Sepa {
 					$transaction->amount = ( double ) $xmlStatement->Amt;
 					$transaction->purpose = $xmlStatement->NtryDtls->TxDtls->Purp->Cd;
 					$transaction->text = $xmlStatement->NtryDtls->TxDtls->RmtInf->Ustrd;
+					$transaction->identifier = $xmlStatement->NtryDtls->TxDtls->Refs->TxId;
+					$transaction->additional_info = $xmlStatement->AddtlNtryInf;
 					
 					if ($xmlStatement->CdtDbtInd == Sepa::DEBIT) {
 						$transaction->amount = - 1 * $transaction->amount;
