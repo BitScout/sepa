@@ -5,16 +5,16 @@ namespace BitScout\Sepa;
 require_once 'Statement.php';
 
 class Sepa {
-	
 	const DEBIT = 'DBIT';
 	
 	/**
 	 * Expects a ZIP or XML file containing a SEPA C52 bank statement
-	 * 
-	 * @param string $filepath Path to a C52 XML file or a ZIP file containing such files     	
+	 *
+	 * @param string $filepath
+	 *        	Path to a C52 XML file or a ZIP file containing such files
 	 */
 	public static function readStatement($filepath) {
-		$filepath = realpath($filepath);
+		$filepath = realpath ( $filepath );
 		
 		$statement = new Statement ();
 		
@@ -34,14 +34,33 @@ class Sepa {
 				$zipDeepPath = 'zip://' . $filepath . '#' . $filename;
 				$xml = simplexml_load_string ( Sepa::readFile ( $zipDeepPath ) );
 				
-				Sepa::readC52 ( $xml, $statement, $filename);
+				Sepa::readXML ( $xml, $statement, $filename );
 			}
 		} else {
 			$xml = simplexml_load_file ( $filepath );
-			Sepa::readC52 ( $xml, $statement );
+			Sepa::readXML ( $xml, $statement );
 		}
 		
 		return $statement;
+	}
+	
+	/**
+	 * Calls the correct XML reader function depending on its type
+	 *
+	 * @param \SimpleXMLElement $xml        	
+	 * @param BitScout\Sepa\Statement $statement        	
+	 * @param string $filename        	
+	 */
+	private static function readXML($xml, $statement, $filename = null) {
+		
+		// Check what type of CAMT file this is
+		$xmlNamespace = $xml->getDocNamespaces () [''];
+		
+		if (strpos ( $xmlNamespace, 'camt.052' ) !== false) {
+			Sepa::readC52 ( $xml, $statement );
+		} else {
+			return null;
+		}
 	}
 	
 	/**
@@ -49,7 +68,7 @@ class Sepa {
 	 *
 	 * @param string $filepath        	
 	 */
-	private static function readC52($xml, $statement, $filename=null) {
+	private static function readC52($xml, $statement, $filename = null) {
 		
 		// Read general information on this statement
 		if ($statement->unixtime === null) {
@@ -80,7 +99,7 @@ class Sepa {
 					$transaction = new Transaction ();
 					$transaction->filename = $filename;
 					$transaction->date = $xmlStatement->ValDt->Dt;
-					$transaction->amount = (double)$xmlStatement->Amt;
+					$transaction->amount = ( double ) $xmlStatement->Amt;
 					$transaction->purpose = $xmlStatement->NtryDtls->TxDtls->Purp->Cd;
 					$transaction->text = $xmlStatement->NtryDtls->TxDtls->RmtInf->Ustrd;
 					
@@ -107,6 +126,8 @@ class Sepa {
 					
 					if ($xmlStatement->Tp->CdOrPrtry->Cd == 'CLBD') {
 						$statement->balance = $xmlStatement->Amt;
+					} else if ($xmlStatement->Tp->CdOrPrtry->Cd == 'PRCD') {
+						$statement->balance_previous = $xmlStatement->Amt;
 					}
 					
 					break;
@@ -118,11 +139,11 @@ class Sepa {
 	
 	/**
 	 * Reads a text file and returns it as a string
-	 * 
-	 * @param string $path
+	 *
+	 * @param string $path        	
 	 */
 	private function readFile($path) {
-		$handle = fopen ($path, 'r' );
+		$handle = fopen ( $path, 'r' );
 		$content = '';
 		while ( ! feof ( $handle ) ) {
 			$content .= fread ( $handle, 8192 );

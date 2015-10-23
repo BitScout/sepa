@@ -16,6 +16,7 @@ $statement = Sepa::readStatement('20150220-20150521-123456-camt52Booked.ZIP');
 	<tr><td>Printed</td><td><?php echo date('Y-m-d H:i:s', $statement->unixtime); ?></td></tr>
 	<tr><td>IBAN</td><td><?php echo $statement->iban; ?></td></tr>
 	<tr><td>Balance</td><td><?php echo $statement->balance; ?></td></tr>
+	<tr><td>Balance (previous)</td><td><?php echo $statement->balance_previous; ?></td></tr>
 </table>
 <h2>Transactions</h2>
 <table border="1" cellspacing="0" cellpadding="5">
